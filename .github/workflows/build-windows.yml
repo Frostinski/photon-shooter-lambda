@@ -122,8 +122,8 @@ jobs:
           BUILD_UTC="$(date -u +'%Y-%m-%d %H:%M UTC')"
 
           cat <<EOF > release_notes.md
-          ## Photon Shooter Lambda — Standalone Windows Builds
-          **Built automatically from commit \`${SHORT_SHA}\` (${BUILD_UTC}) — No Godot installation required.**
+          ## Photon Shooter Lambda — Charity Day (11th November)
+          **Standalone Windows Builds — Built automatically from commit \`${SHORT_SHA}\` (${BUILD_UTC}). No Godot installation required.**
 
           ### Which download should I pick for my Surface Pro / Windows PC?
           - **\`PhotonShooterLambda-Windows-x86_64.zip\`** — For **Intel or AMD** Surface Pros and standard 64-bit Windows 10/11 PCs. *(Also runs on ARM Surface Pros via Windows Prism emulation if you're unsure!)*
@@ -141,26 +141,28 @@ jobs:
           # Strip leading indentation from heredoc
           sed -i 's/^          //' release_notes.md
 
+          # Remove any existing 'latest' release or orphaned draft releases (created when tags are deleted)
+          # so 'gh release create --latest' never hits HTTP 422 on a draft release.
+          EXISTING_IDS=$(gh api "repos/${GITHUB_REPOSITORY}/releases?per_page=100" \
+            --jq '.[] | select(.tag_name == "latest" or .tag_name == "Base_version" or .draft == true) | .id' || true)
+          if [ -n "${EXISTING_IDS}" ]; then
+            for REL_ID in ${EXISTING_IDS}; do
+              echo "Deleting previous/draft release ID ${REL_ID}..."
+              gh api -X DELETE "repos/${GITHUB_REPOSITORY}/releases/${REL_ID}"
+            done
+            sleep 2
+          fi
+
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git tag -f latest "${GITHUB_SHA}"
           git push origin -f refs/tags/latest
 
-          if gh release view latest >/dev/null 2>&1; then
-            gh release upload latest \
-              dist/PhotonShooterLambda-Windows-x86_64.zip \
-              dist/PhotonShooterLambda-Windows-arm64.zip \
-              --clobber
-            gh release edit latest \
-              --title "Photon Shooter Lambda — Latest Windows Build (x86_64 & ARM64)" \
-              --notes-file release_notes.md \
-              --latest
-          else
-            gh release create latest \
-              dist/PhotonShooterLambda-Windows-x86_64.zip \
-              dist/PhotonShooterLambda-Windows-arm64.zip \
-              --target "${GITHUB_SHA}" \
-              --title "Photon Shooter Lambda — Latest Windows Build (x86_64 & ARM64)" \
-              --notes-file release_notes.md \
-              --latest
-          fi
+          gh release create latest \
+            dist/PhotonShooterLambda-Windows-x86_64.zip \
+            dist/PhotonShooterLambda-Windows-arm64.zip \
+            --repo "${GITHUB_REPOSITORY}" \
+            --target "${GITHUB_SHA}" \
+            --title "Photon Shooter Lambda — Charity Day Windows Build (x86_64 & ARM64)" \
+            --notes-file release_notes.md \
+            --latest
