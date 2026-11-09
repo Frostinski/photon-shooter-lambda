@@ -1,0 +1,115 @@
+{
+  "version": "2.0-banking",
+  "frame_width": 230,
+  "frame_height": 120,
+  "total_columns": 12,
+  "total_rows": 3,
+  "sheet_dimensions": [
+    2760,
+    360
+  ],
+  "rows": {
+    "bank_left": {
+      "index": 0,
+      "description": "Starboard wing raises up into fuselage, port wing dips, nose and fuselage level (Moving UP)"
+    },
+    "neutral": {
+      "index": 1,
+      "description": "Balanced 3/4 horizontal profile, fuselage and nose level (Level Flight)"
+    },
+    "bank_right": {
+      "index": 2,
+      "description": "Port wing stands tall/prominent, starboard wing moves down slightly, fuselage and nose level (Moving DOWN)"
+    }
+  },
+  "columns": {
+    "idle": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "cruise": [
+      4,
+      5,
+      6,
+      7
+    ],
+    "boost": [
+      8,
+      9,
+      10,
+      11
+    ]
+  },
+  "hitbox": {
+    "x_offset": 72,
+    "y_offset": 24,
+    "width": 136,
+    "height": 72
+  },
+  "nozzle_anchors": {
+    "bank_left": {
+      "upper": [
+        78,
+        46
+      ],
+      "lower": [
+        78,
+        64
+      ]
+    },
+    "neutral": {
+      "upper": [
+        78,
+        45
+      ],
+      "lower": [
+        78,
+        67
+      ]
+    },
+    "bank_right": {
+      "upper": [
+        78,
+        43
+      ],
+      "lower": [
+        78,
+        69
+      ]
+    }
+  },
+  "primary_muzzles": {
+    "bank_left": [
+      [
+        150,
+        24
+      ],
+      [
+        130,
+        90
+      ]
+    ],
+    "neutral": [
+      [
+        150,
+        18
+      ],
+      [
+        130,
+        98
+      ]
+    ],
+    "bank_right": [
+      [
+        150,
+        12
+      ],
+      [
+        130,
+        104
+      ]
+    ]
+  }
+}

@@ -1,0 +1,75 @@
+{
+  "version": "1.0-scout-animated",
+  "frame_width": 96,
+  "frame_height": 56,
+  "total_columns": 4,
+  "total_rows": 3,
+  "sheet_dimensions": [
+    384,
+    168
+  ],
+  "rows": {
+    "cruise": {
+      "index": 0,
+      "description": "Standard flight & hover loop with animated dual supersonic cyan engine plumes and sinister eye",
+      "columns": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "loop": true,
+      "fps": 11.0
+    },
+    "charge": {
+      "index": 1,
+      "description": "Pre-firing charge-up sequence: escalating ocular energy, conduit illumination, lens flare cross",
+      "columns": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "loop": false,
+      "fps": 12.0
+    },
+    "fire": {
+      "index": 2,
+      "description": "Weapon discharge sequence: 3-shot muzzle blast cones, shockwave ring, dissipation venting",
+      "columns": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "loop": false,
+      "fps": 12.0
+    }
+  },
+  "hull_offset": {
+    "x": 16,
+    "y": 2,
+    "width": 55,
+    "height": 51
+  },
+  "eye_anchor": {
+    "x": 24.0,
+    "y": 27.0
+  },
+  "nozzle_anchors": {
+    "upper": [
+      69.0,
+      19.5
+    ],
+    "lower": [
+      69.0,
+      34.5
+    ]
+  },
+  "hitbox": {
+    "x_offset": 24,
+    "y_offset": 8,
+    "width": 39,
+    "height": 39
+  }
+}

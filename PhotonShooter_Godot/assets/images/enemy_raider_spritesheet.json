@@ -1,0 +1,68 @@
+{
+  "version": "2.1-raider-2.5D-articulated-banking",
+  "frame_width": 128,
+  "frame_height": 68,
+  "total_columns": 4,
+  "total_rows": 3,
+  "sheet_dimensions": [
+    512,
+    204
+  ],
+  "rows": {
+    "bank_left": {
+      "index": 0,
+      "roll_attitude": "bank_left",
+      "description": "Bank Left / Climb (Moving UP, wings rolled into sleek profile, nose level)",
+      "nozzle_anchors": {
+        "upper": [
+          98.0,
+          25.5
+        ],
+        "lower": [
+          98.0,
+          37.5
+        ]
+      }
+    },
+    "neutral": {
+      "index": 1,
+      "roll_attitude": "neutral",
+      "description": "Neutral / Level Flight (Balanced 2.5D horizontal side profile, nose level)",
+      "nozzle_anchors": {
+        "upper": [
+          98.5,
+          24.5
+        ],
+        "lower": [
+          98.5,
+          39.5
+        ]
+      }
+    },
+    "bank_right": {
+      "index": 2,
+      "roll_attitude": "bank_right",
+      "description": "Bank Right / Dive (Moving DOWN, upper wing stands tall, nose level)",
+      "nozzle_anchors": {
+        "upper": [
+          98.2,
+          23.0
+        ],
+        "lower": [
+          98.2,
+          42.5
+        ]
+      }
+    }
+  },
+  "static_dimensions": [
+    115,
+    60
+  ],
+  "hitbox": {
+    "x_offset": 14,
+    "y_offset": 8,
+    "width": 78,
+    "height": 48
+  }
+}

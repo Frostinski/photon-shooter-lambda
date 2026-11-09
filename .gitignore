@@ -1,0 +1,18 @@
+# Godot 4+ caches, imports & local export builds
+.godot/
+*.translation
+build/
+
+# Secrets & environment variables
+.env
+.env.*
+
+# Scratch & temporary pipeline dumps
+scratch/
+logs/
+__pycache__/
+*.pyc
+*.pyo
+*.dmp
+*_meshy_raw*
+enemy_frames_tmp/

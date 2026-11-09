@@ -1,0 +1,166 @@
+name: Build Standalone Windows Executables
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: build-windows-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  GODOT_VERSION: "4.7.2"
+  GODOT_STATUS: "stable"
+
+jobs:
+  build-windows:
+    name: Export Windows (x86_64 & ARM64)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Cache Godot Engine & Export Templates
+        id: godot-cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/godot-bin
+            ~/.local/share/godot/export_templates/${{ env.GODOT_VERSION }}.${{ env.GODOT_STATUS }}
+          key: godot-${{ env.GODOT_VERSION }}-${{ env.GODOT_STATUS }}-linux-v1
+
+      - name: Install Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends libfontconfig1 unzip zip curl ca-certificates
+
+      - name: Download Godot ${{ env.GODOT_VERSION }}-${{ env.GODOT_STATUS }} & Export Templates
+        if: steps.godot-cache.outputs.cache-hit != 'true'
+        run: |
+          set -euo pipefail
+          TAG="${GODOT_VERSION}-${GODOT_STATUS}"
+          TPL_DIR="${HOME}/.local/share/godot/export_templates/${GODOT_VERSION}.${GODOT_STATUS}"
+          BIN_DIR="${HOME}/.cache/godot-bin"
+          mkdir -p "${TPL_DIR}" "${BIN_DIR}" /tmp/godot-dl
+
+          echo "Downloading Godot Linux headless binary (${TAG})..."
+          curl -fSL --retry 3 \
+            "https://github.com/godotengine/godot/releases/download/${TAG}/Godot_v${TAG}_linux.x86_64.zip" \
+            -o /tmp/godot-dl/godot.zip
+          unzip -q /tmp/godot-dl/godot.zip -d /tmp/godot-dl
+          mv "/tmp/godot-dl/Godot_v${TAG}_linux.x86_64" "${BIN_DIR}/godot"
+          chmod +x "${BIN_DIR}/godot"
+
+          echo "Downloading Godot Export Templates (${TAG})..."
+          curl -fSL --retry 3 \
+            "https://github.com/godotengine/godot/releases/download/${TAG}/Godot_v${TAG}_export_templates.tpz" \
+            -o /tmp/godot-dl/templates.tpz
+          unzip -q /tmp/godot-dl/templates.tpz -d /tmp/godot-dl
+          mv /tmp/godot-dl/templates/* "${TPL_DIR}/"
+          rm -rf /tmp/godot-dl
+
+      - name: Activate Godot Binary
+        run: |
+          chmod +x "${HOME}/.cache/godot-bin/godot"
+          sudo ln -sf "${HOME}/.cache/godot-bin/godot" /usr/local/bin/godot
+          godot --version
+          ls -lh "${HOME}/.local/share/godot/export_templates/${GODOT_VERSION}.${GODOT_STATUS}/windows_release_x86_64.exe"
+          ls -lh "${HOME}/.local/share/godot/export_templates/${GODOT_VERSION}.${GODOT_STATUS}/windows_release_arm64.exe"
+
+      - name: Import Project Assets & Run Automated Verification Suite
+        run: |
+          godot --headless --path PhotonShooter_Godot --import
+          godot --headless --path PhotonShooter_Godot --script res://tests/test_godot_port.gd
+
+      - name: Export Standalone Windows Executables (x86_64 & ARM64)
+        run: |
+          set -euo pipefail
+          mkdir -p "${GITHUB_WORKSPACE}/build/win-x86_64" "${GITHUB_WORKSPACE}/build/win-arm64" "${GITHUB_WORKSPACE}/dist"
+
+          echo "Exporting Windows Desktop (x86_64)..."
+          godot --headless --path PhotonShooter_Godot \
+            --export-release "Windows Desktop (x86_64)" \
+            "${GITHUB_WORKSPACE}/build/win-x86_64/PhotonShooterLambda_x86_64.exe"
+
+          echo "Exporting Windows Desktop (ARM64)..."
+          godot --headless --path PhotonShooter_Godot \
+            --export-release "Windows Desktop (ARM64)" \
+            "${GITHUB_WORKSPACE}/build/win-arm64/PhotonShooterLambda_arm64.exe"
+
+          # Verify both standalone executables exist and contain the embedded PCK (> 40 MB)
+          X64_BYTES=$(stat -c%s "${GITHUB_WORKSPACE}/build/win-x86_64/PhotonShooterLambda_x86_64.exe")
+          ARM_BYTES=$(stat -c%s "${GITHUB_WORKSPACE}/build/win-arm64/PhotonShooterLambda_arm64.exe")
+          echo "x86_64 EXE size: ${X64_BYTES} bytes"
+          echo "ARM64  EXE size: ${ARM_BYTES} bytes"
+          test "${X64_BYTES}" -gt 40000000
+          test "${ARM_BYTES}" -gt 40000000
+
+          (cd "${GITHUB_WORKSPACE}/build/win-x86_64" && zip -9 "${GITHUB_WORKSPACE}/dist/PhotonShooterLambda-Windows-x86_64.zip" PhotonShooterLambda_x86_64.exe)
+          (cd "${GITHUB_WORKSPACE}/build/win-arm64" && zip -9 "${GITHUB_WORKSPACE}/dist/PhotonShooterLambda-Windows-arm64.zip" PhotonShooterLambda_arm64.exe)
+          ls -lh "${GITHUB_WORKSPACE}/dist/"
+
+      - name: Upload Build Artifacts to Workflow Run
+        uses: actions/upload-artifact@v4
+        with:
+          name: PhotonShooterLambda-Windows-Standalone
+          path: dist/*.zip
+          if-no-files-found: error
+
+      - name: Publish Standalone Executables to GitHub Releases (Latest)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          SHORT_SHA="${GITHUB_SHA::7}"
+          BUILD_UTC="$(date -u +'%Y-%m-%d %H:%M UTC')"
+
+          cat <<EOF > release_notes.md
+          ## Photon Shooter Lambda — Standalone Windows Builds
+          **Built automatically from commit \`${SHORT_SHA}\` (${BUILD_UTC}) — No Godot installation required.**
+
+          ### Which download should I pick for my Surface Pro / Windows PC?
+          - **\`PhotonShooterLambda-Windows-x86_64.zip\`** — For **Intel or AMD** Surface Pros and standard 64-bit Windows 10/11 PCs. *(Also runs on ARM Surface Pros via Windows Prism emulation if you're unsure!)*
+          - **\`PhotonShooterLambda-Windows-arm64.zip\`** — Native **ARM64** build for **Snapdragon X (Copilot+)** Surface Pros.
+
+          *(To check on your Surface Pro: open **Settings → System → About** and look at **System type**: \`x64-based processor\` = \`x86_64\`, \`ARM-based processor\` = \`arm64\`.)*
+
+          ### How to Run
+          1. Download the \`.zip\` file below and **Extract All**.
+          2. Double-click **\`PhotonShooterLambda_x86_64.exe\`** (or **\`PhotonShooterLambda_arm64.exe\`**).
+          3. If Windows SmartScreen shows *"Windows protected your PC"*, click **More info → Run anyway**.
+          4. Press **\`F11\`** or **\`Alt + Enter\`** anytime to toggle fullscreen.
+          EOF
+
+          # Strip leading indentation from heredoc
+          sed -i 's/^          //' release_notes.md
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -f latest "${GITHUB_SHA}"
+          git push origin -f refs/tags/latest
+
+          if gh release view latest >/dev/null 2>&1; then
+            gh release upload latest \
+              dist/PhotonShooterLambda-Windows-x86_64.zip \
+              dist/PhotonShooterLambda-Windows-arm64.zip \
+              --clobber
+            gh release edit latest \
+              --title "Photon Shooter Lambda — Latest Windows Build (x86_64 & ARM64)" \
+              --notes-file release_notes.md \
+              --latest
+          else
+            gh release create latest \
+              dist/PhotonShooterLambda-Windows-x86_64.zip \
+              dist/PhotonShooterLambda-Windows-arm64.zip \
+              --target "${GITHUB_SHA}" \
+              --title "Photon Shooter Lambda — Latest Windows Build (x86_64 & ARM64)" \
+              --notes-file release_notes.md \
+              --latest
+          fi
