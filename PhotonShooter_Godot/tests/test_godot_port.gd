@@ -73,7 +73,9 @@ func _process(_delta: float) -> bool:
 		var hs = main_node.current_state
 		hs.state_update(0.25)
 		var hsm = root.get_node("HighScoreManager")
-		assert(hsm != null and hsm.scores.is_empty() and hsm.get_top_score() == 0, "Scoreboard must initialize blank with 0 entries")
+		assert(hsm != null and hsm.DEFAULT_SCORES.is_empty(), "Scoreboard DEFAULT_SCORES must be blank with 0 entries")
+		hsm.clear_scores()
+		assert(hsm.scores.is_empty() and hsm.get_top_score() == 0, "Cleared scoreboard must have 0 entries and 0 top score")
 		hsm.add_score("ACE", 12300)
 		assert(hsm.scores.size() == 1 and hsm.get_top_score() == 12300, "Adding a score to blank scoreboard should set #1")
 		hsm.clear_scores()
@@ -148,9 +150,9 @@ func _process(_delta: float) -> bool:
 		assert(scout.has_fired and scout_bullets.size() == 3, "Scout should charge and fire a single 3-shot spread during hover")
 		assert(scout.state == "retreat", "Scout should transition to retreat state after hover_duration")
 
-		# Test Raider banking states & X-checkpoint firing in GameState
+		# Test Raider banking states & single X-checkpoint firing in GameState
 		var raider = game.EnemyShip.new("raider", 1450.0, 500.0, game.enemy_sprites, 1.0)
-		assert(raider.hp == 25 and raider.fire_checkpoints.size() == 2, "Raider should have 25 base HP and 2 X fire checkpoints")
+		assert(raider.hp == 25 and raider.fire_checkpoints.size() == 1, "Raider (Interceptor) should have 25 base HP and 1 X fire checkpoint")
 		raider.amp_y = 140.0
 		raider.freq_y = 2.5
 		raider.phase = 0.0

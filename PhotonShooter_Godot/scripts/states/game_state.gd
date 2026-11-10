@@ -192,7 +192,6 @@ class EnemyShip:
 			score_value = 150
 			fire_checkpoints = [
 				GameConfig.SCREEN_WIDTH * 0.72 + randf_range(-30.0, 30.0),
-				GameConfig.SCREEN_WIDTH * 0.42 + randf_range(-30.0, 30.0),
 			]
 
 	func update(dt: float, player_ref: PlayerShip, enemy_bullets: Array, current_phase: int) -> void:
