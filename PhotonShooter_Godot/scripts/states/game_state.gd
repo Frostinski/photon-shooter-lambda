@@ -377,14 +377,14 @@ class DreadnoughtShip:
 	# Half-health Emergency Shield & Phase 2 (+25% fire rate + targeted high-speed charge lasers)
 	var phase2_triggered: bool = false
 	var enraged: bool = false
-	var emergency_shield_duration: float = 4.5
+	var emergency_shield_duration: float = 3.5
 	var emergency_shield_timer: float = 0.0
 	var shield_hit_flash: float = 0.0
 	var shield_hit_angle: float = PI
 	var charging_lasers: Array = []
 	var overload_shot_timer: float = 0.0
 	var overload_shots_remaining: int = 0
-	var targeted_laser_timer: float = 2.08
+	var targeted_laser_timer: float = 0.5
 	var laser_hardpoint_idx: int = 0
 
 	func _init(sprite_data: Dictionary) -> void:
@@ -420,10 +420,10 @@ class DreadnoughtShip:
 		emergency_shield_timer = emergency_shield_duration
 		burst_remaining = 0
 		charging_lasers.clear()
-		overload_shots_remaining = 5
-		overload_shot_timer = 0.16
+		overload_shots_remaining = 2
+		overload_shot_timer = 0.15
 
-	func _queue_targeted_laser(player_ref: PlayerShip, charge_dur: float = 1.0, beam_spd: float = 1120.0) -> void:
+	func _queue_targeted_laser(player_ref: PlayerShip, track_dur: float = 1.0, lock_dur: float = 0.25, beam_spd: float = 1120.0) -> void:
 		var hardpoints: Array[Vector2] = [
 			Vector2(-218.0, 26.0),
 			Vector2(-180.0, 18.0),
@@ -437,7 +437,8 @@ class DreadnoughtShip:
 		charging_lasers.append({
 			"offset": hp_off,
 			"age": 0.0,
-			"charge_time": charge_dur,
+			"track_time": track_dur,
+			"charge_time": track_dur + lock_dur,
 			"aim_angle": ang,
 			"speed": beam_spd,
 		})
@@ -445,10 +446,11 @@ class DreadnoughtShip:
 	func _update_charging_lasers(dt: float, player_ref: PlayerShip, enemy_bullets: Array) -> void:
 		for cl in charging_lasers.duplicate():
 			var off: Vector2 = cl["offset"]
-			if player_ref != null:
+			var track_limit: float = float(cl.get("track_time", 1.0))
+			if float(cl["age"]) + 0.0001 < track_limit and player_ref != null:
 				cl["aim_angle"] = atan2(player_ref.y - (y + off.y), player_ref.x - (x + off.x))
 			cl["age"] = float(cl["age"]) + dt
-			if float(cl["age"]) >= float(cl["charge_time"]):
+			if float(cl["age"]) + 0.0001 >= float(cl["charge_time"]):
 				var ang: float = float(cl["aim_angle"])
 				var spd: float = float(cl["speed"])
 				enemy_bullets.append({
@@ -462,6 +464,8 @@ class DreadnoughtShip:
 				})
 				SoundManager.play("boss_fire")
 				charging_lasers.erase(cl)
+				overload_shot_timer = 0.5
+				targeted_laser_timer = 0.5
 
 	func trigger_retreat() -> void:
 		if not retreating:
@@ -507,21 +511,23 @@ class DreadnoughtShip:
 			x = target_x + sin(strafe_time * 0.8) * 32.0 * strafe_env
 			vy = (y - prev_y) / maxf(dt, 0.001)
 
+		var was_charging: bool = not charging_lasers.is_empty()
 		_update_charging_lasers(dt, player_ref, enemy_bullets)
 
 		# Emergency Shield Overload Barrage (invulnerable while unleashing targeted high-speed lasers)
 		if emergency_shield_timer > 0.0:
 			emergency_shield_timer = maxf(0.0, emergency_shield_timer - dt)
-			if overload_shots_remaining > 0:
+			if overload_shots_remaining > 0 and not was_charging and charging_lasers.is_empty():
 				overload_shot_timer -= dt
-				if overload_shot_timer <= 0.0:
-					overload_shot_timer = 0.72
+				if overload_shot_timer <= 0.0001:
+					overload_shot_timer = 0.5
 					overload_shots_remaining -= 1
-					_queue_targeted_laser(player_ref, 1.0, 1120.0)
+					_queue_targeted_laser(player_ref, 1.0, 0.25, 1120.0)
 			if emergency_shield_timer <= 0.0:
 				enraged = true
 				attack_timer = 0.24
-				targeted_laser_timer = 1.35
+				if charging_lasers.is_empty():
+					targeted_laser_timer = maxf(targeted_laser_timer, 0.5)
 			return
 
 		var fire_mult: float = 1.25 if enraged else 1.0
@@ -567,11 +573,11 @@ class DreadnoughtShip:
 				burst_angle = base_ang
 			attack_index += 1
 
-		if enraged and not entering:
+		if enraged and not entering and not was_charging and charging_lasers.is_empty():
 			targeted_laser_timer -= dt
-			if targeted_laser_timer <= 0.0:
-				targeted_laser_timer = 2.60 / fire_mult
-				_queue_targeted_laser(player_ref, 1.0, 1120.0)
+			if targeted_laser_timer <= 0.0001:
+				targeted_laser_timer = 0.5
+				_queue_targeted_laser(player_ref, 1.0, 0.25, 1120.0)
 
 	func get_hitbox() -> Rect2:
 		return Rect2(x - 205.0, y - 82.0, 390.0, 164.0)
@@ -602,14 +608,14 @@ class BossTitan:
 	# Half-health Emergency Shield & Phase 2 (+40% fire rate + targeted high-speed charge lasers)
 	var phase2_triggered: bool = false
 	var enraged: bool = false
-	var emergency_shield_duration: float = 5.0
+	var emergency_shield_duration: float = 5.1
 	var emergency_shield_timer: float = 0.0
 	var shield_hit_flash: float = 0.0
 	var shield_hit_angle: float = PI
 	var charging_lasers: Array = []
 	var overload_shot_timer: float = 0.0
 	var overload_shots_remaining: int = 0
-	var targeted_laser_timer: float = 1.85
+	var targeted_laser_timer: float = 0.5
 	var laser_hardpoint_idx: int = 0
 
 	func _init(sprite_data: Dictionary) -> void:
@@ -645,10 +651,10 @@ class BossTitan:
 		emergency_shield_timer = emergency_shield_duration
 		salvo_remaining = 0
 		charging_lasers.clear()
-		overload_shots_remaining = 7
-		overload_shot_timer = 0.16
+		overload_shots_remaining = 3
+		overload_shot_timer = 0.15
 
-	func _queue_targeted_laser(player_ref: PlayerShip, charge_dur: float = 1.0, beam_spd: float = 1220.0) -> void:
+	func _queue_targeted_laser(player_ref: PlayerShip, track_dur: float = 1.0, lock_dur: float = 0.25, beam_spd: float = 1220.0) -> void:
 		var hardpoints: Array[Vector2] = [
 			Vector2(-358.0, 12.0),
 			Vector2(-236.0, -34.0),
@@ -664,7 +670,8 @@ class BossTitan:
 		charging_lasers.append({
 			"offset": hp_off,
 			"age": 0.0,
-			"charge_time": charge_dur,
+			"track_time": track_dur,
+			"charge_time": track_dur + lock_dur,
 			"aim_angle": ang,
 			"speed": beam_spd,
 		})
@@ -672,10 +679,11 @@ class BossTitan:
 	func _update_charging_lasers(dt: float, player_ref: PlayerShip, enemy_bullets: Array) -> void:
 		for cl in charging_lasers.duplicate():
 			var off: Vector2 = cl["offset"]
-			if player_ref != null:
+			var track_limit: float = float(cl.get("track_time", 1.0))
+			if float(cl["age"]) + 0.0001 < track_limit and player_ref != null:
 				cl["aim_angle"] = atan2(player_ref.y - (y + off.y), player_ref.x - (x + off.x))
 			cl["age"] = float(cl["age"]) + dt
-			if float(cl["age"]) >= float(cl["charge_time"]):
+			if float(cl["age"]) + 0.0001 >= float(cl["charge_time"]):
 				var ang: float = float(cl["aim_angle"])
 				var spd: float = float(cl["speed"])
 				enemy_bullets.append({
@@ -689,6 +697,8 @@ class BossTitan:
 				})
 				SoundManager.play("boss_fire")
 				charging_lasers.erase(cl)
+				overload_shot_timer = 0.5
+				targeted_laser_timer = 0.5
 
 	func update(dt: float, player_ref: PlayerShip, enemy_bullets: Array) -> void:
 		time += dt
@@ -718,21 +728,23 @@ class BossTitan:
 		x = target_x + sin(strafe_time * 0.6) * 22.0 * strafe_env
 		vy = (y - prev_y) / maxf(dt, 0.001)
 
+		var was_charging: bool = not charging_lasers.is_empty()
 		_update_charging_lasers(dt, player_ref, enemy_bullets)
 
 		# Emergency Shield Overload Barrage (invulnerable while unleashing targeted high-speed lasers)
 		if emergency_shield_timer > 0.0:
 			emergency_shield_timer = maxf(0.0, emergency_shield_timer - dt)
-			if overload_shots_remaining > 0:
+			if overload_shots_remaining > 0 and not was_charging and charging_lasers.is_empty():
 				overload_shot_timer -= dt
-				if overload_shot_timer <= 0.0:
-					overload_shot_timer = 0.58
+				if overload_shot_timer <= 0.0001:
+					overload_shot_timer = 0.5
 					overload_shots_remaining -= 1
-					_queue_targeted_laser(player_ref, 1.0, 1220.0)
+					_queue_targeted_laser(player_ref, 1.0, 0.25, 1220.0)
 			if emergency_shield_timer <= 0.0:
 				enraged = true
 				attack_timer = 0.22
-				targeted_laser_timer = 1.25
+				if charging_lasers.is_empty():
+					targeted_laser_timer = maxf(targeted_laser_timer, 0.5)
 			return
 
 		var fire_mult: float = 1.40 if enraged else 1.0
@@ -796,11 +808,11 @@ class BossTitan:
 						"color": GameConfig.COLOR_MAGENTA
 					})
 
-		if enraged:
+		if enraged and not was_charging and charging_lasers.is_empty():
 			targeted_laser_timer -= dt
-			if targeted_laser_timer <= 0.0:
-				targeted_laser_timer = 2.65 / fire_mult
-				_queue_targeted_laser(player_ref, 1.0, 1220.0)
+			if targeted_laser_timer <= 0.0001:
+				targeted_laser_timer = 0.5
+				_queue_targeted_laser(player_ref, 1.0, 0.25, 1220.0)
 
 	func get_hitbox() -> Rect2:
 		return Rect2(x - 412.0, y - 110.0, 662.0, 226.0)

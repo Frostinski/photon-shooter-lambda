@@ -218,7 +218,29 @@ func _process(_delta: float) -> bool:
 		game._hit_dreadnought(100, Vector2(1300.0, 540.0), true)
 		assert(game.dreadnought.hp == 600, "Destroyer must be 100% invulnerable to damage while Emergency Shield is active")
 		var d_overload_bullets: Array = []
-		for _ds in range(95):
+		game.player.y = 300.0
+		for _ds in range(18):
+			game.dreadnought.update(0.05, game.player, d_overload_bullets)
+		assert(game.dreadnought.charging_lasers.size() == 1, "Destroyer must have 1 active targeting laser during tracking")
+		var tracked_ang_1: float = float(game.dreadnought.charging_lasers[0]["aim_angle"])
+		game.player.y = 820.0
+		for _ds in range(6):
+			game.dreadnought.update(0.05, game.player, d_overload_bullets)
+		var locked_ang: float = float(game.dreadnought.charging_lasers[0]["aim_angle"])
+		assert(absf(locked_ang - tracked_ang_1) > 0.15, "Targeting laser must track player during first 1.0s")
+		# Now age is ~1.05s (>= 1.0s track_time): moving the player must NOT move the locked targeting laser
+		game.player.y = 200.0
+		game.dreadnought.update(0.05, game.player, d_overload_bullets)
+		assert(absf(float(game.dreadnought.charging_lasers[0]["aim_angle"]) - locked_ang) < 0.0001, "Targeting laser must lock in place after 1.0s targeting")
+		for _ds in range(3):
+			game.dreadnought.update(0.05, game.player, d_overload_bullets)
+		assert(d_overload_bullets.size() == 1 and game.dreadnought.charging_lasers.is_empty(), "Targeting laser must fire after locking and enter 0.5s gap before reacquiring")
+		for _ds in range(9):
+			game.dreadnought.update(0.05, game.player, d_overload_bullets)
+		assert(game.dreadnought.charging_lasers.is_empty(), "Must maintain 0.5s gap before reacquiring player ship")
+		game.dreadnought.update(0.05, game.player, d_overload_bullets)
+		assert(game.dreadnought.charging_lasers.size() == 1, "Must reacquire player ship after 0.5s gap")
+		for _ds in range(45):
 			game.dreadnought.update(0.05, game.player, d_overload_bullets)
 		var d_tlasers: int = 0
 		for eb_d in d_overload_bullets:
@@ -226,7 +248,7 @@ func _process(_delta: float) -> bool:
 				d_tlasers += 1
 				var d_spd: float = Vector2(float(eb_d["vx"]), float(eb_d["vy"])).length()
 				assert(absf(d_spd - 1120.0) < 2.0 and float(eb_d["radius"]) >= 11.0, "Destroyer targeted overload lasers must be larger (radius 11.5) while keeping 1120 speed")
-		assert(d_tlasers >= 5, "Destroyer must charge (1.0s player tracking) and fire multiple targeted high-speed lasers during Emergency Shield")
+		assert(d_tlasers >= 2, "Destroyer must charge (1.0s tracking + lock + 0.5s gap) and fire targeted high-speed lasers during Emergency Shield")
 		assert(not game.dreadnought.is_shielded() and game.dreadnought.enraged, "Destroyer Emergency Shield must drop after a few seconds into enraged Phase 2")
 		game.dreadnought.attack_timer = 0.01
 		game.dreadnought.update(0.02, game.player, d_overload_bullets)
@@ -253,7 +275,7 @@ func _process(_delta: float) -> bool:
 				b_tlasers += 1
 				var b_spd: float = Vector2(float(eb_b["vx"]), float(eb_b["vy"])).length()
 				assert(absf(b_spd - 1220.0) < 2.0 and float(eb_b["radius"]) >= 11.0, "Titan targeted overload lasers must be larger (radius 11.5) while keeping 1220 speed")
-		assert(b_tlasers >= 7, "Boss Titan must charge (1.0s player tracking) and fire multiple targeted high-speed lasers during Emergency Shield")
+		assert(b_tlasers >= 3, "Boss Titan must charge (1.0s tracking + lock + 0.5s gap) and fire multiple targeted high-speed lasers during Emergency Shield")
 		assert(not game.boss.is_shielded() and game.boss.enraged, "Boss Titan Emergency Shield must drop into enraged Phase 2")
 		game.boss.attack_timer = 0.01
 		game.boss.update(0.02, game.player, b_overload_bullets)

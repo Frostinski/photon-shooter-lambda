@@ -1569,22 +1569,28 @@ func draw_boss_laser_charge(
 	var p: float = clampf(progress, 0.0, 1.0)
 	var origin := Vector2(ox, oy)
 	var dir := Vector2(cos(aim_angle), sin(aim_angle))
-	var urgent: bool = (p >= 0.65)
+	var locked: bool = (p >= 0.80)
 
-	# 1. Thicker high-visibility player-tracking laser sightline telegraph (tracks for 1.0s before firing)
+	# 1. Thicker high-visibility player-tracking laser sightline (tracks for 1.0s, then locks in place before firing)
 	var sight_len: float = 1850.0
 	var sight_end: Vector2 = origin + dir * sight_len
-	var pulse_freq: float = 72.0 if urgent else 28.0
-	var track_pulse: float = 0.78 + 0.22 * sin(anim_time * pulse_freq)
-	var outer_w: float = lerpf(5.8, 9.5, p)
-	var mid_w: float = lerpf(2.8, 4.6, p)
-	var core_w: float = lerpf(1.3, 2.3, p)
-	var outer_a: float = lerpf(0.24, 0.50, p) * track_pulse
-	var mid_a: float = lerpf(0.54, 0.88, p) * track_pulse
-	var core_a: float = lerpf(0.42, 0.95, p) * track_pulse
-	canvas.draw_line(origin, sight_end, Color(1.0, 0.10, 0.42, outer_a), outer_w)
-	canvas.draw_line(origin, sight_end, Color(1.0, 0.22, 0.56, mid_a), mid_w)
-	canvas.draw_line(origin, sight_end, Color(1.0, 0.90, 0.96, core_a), core_w)
+	if locked:
+		var lock_pulse: float = 0.72 + 0.28 * sin(anim_time * 80.0)
+		canvas.draw_line(origin, sight_end, Color(1.0, 0.12, 0.44, 0.56 * lock_pulse), 9.8)
+		canvas.draw_line(origin, sight_end, Color(1.0, 0.36, 0.68, 0.92 * lock_pulse), 5.0)
+		canvas.draw_line(origin, sight_end, Color(1.0, 0.96, 0.99, 0.98 * lock_pulse), 2.6)
+	else:
+		var track_t: float = clampf(p / 0.80, 0.0, 1.0)
+		var track_pulse: float = 0.82 + 0.18 * sin(anim_time * 28.0)
+		var outer_w: float = lerpf(5.8, 8.2, track_t)
+		var mid_w: float = lerpf(2.8, 4.0, track_t)
+		var core_w: float = lerpf(1.3, 2.0, track_t)
+		var outer_a: float = lerpf(0.24, 0.44, track_t) * track_pulse
+		var mid_a: float = lerpf(0.54, 0.82, track_t) * track_pulse
+		var core_a: float = lerpf(0.42, 0.88, track_t) * track_pulse
+		canvas.draw_line(origin, sight_end, Color(1.0, 0.10, 0.42, outer_a), outer_w)
+		canvas.draw_line(origin, sight_end, Color(1.0, 0.22, 0.56, mid_a), mid_w)
+		canvas.draw_line(origin, sight_end, Color(1.0, 0.90, 0.96, core_a), core_w)
 
 	# 2. Contracting plasma charge ring pulling energy into the cannon muzzle
 	var ring_r: float = lerpf(38.0, 6.5, pow(p, 0.82))
