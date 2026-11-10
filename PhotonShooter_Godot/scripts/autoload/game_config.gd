@@ -1569,45 +1569,49 @@ func draw_boss_laser_charge(
 	var p: float = clampf(progress, 0.0, 1.0)
 	var origin := Vector2(ox, oy)
 	var dir := Vector2(cos(aim_angle), sin(aim_angle))
-	var locked: bool = (p >= 0.66)
+	var urgent: bool = (p >= 0.65)
 
-	# 1. Sleek player-targeted laser sightline telegraph (brightens right as trajectory locks)
-	var sight_len: float = 1750.0
+	# 1. Thicker high-visibility player-tracking laser sightline telegraph (tracks for 1.0s before firing)
+	var sight_len: float = 1850.0
 	var sight_end: Vector2 = origin + dir * sight_len
-	if locked:
-		var lock_pulse: float = 0.65 + 0.35 * sin(anim_time * 64.0)
-		canvas.draw_line(origin, sight_end, Color(1.0, 0.14, 0.44, 0.34 * lock_pulse), 4.2)
-		canvas.draw_line(origin, sight_end, Color(1.0, 0.88, 0.95, 0.68 * lock_pulse), 1.6)
-	else:
-		var track_a: float = lerpf(0.10, 0.30, p / 0.66)
-		canvas.draw_line(origin, sight_end, Color(1.0, 0.16, 0.52, track_a), 1.4)
+	var pulse_freq: float = 72.0 if urgent else 28.0
+	var track_pulse: float = 0.78 + 0.22 * sin(anim_time * pulse_freq)
+	var outer_w: float = lerpf(5.8, 9.5, p)
+	var mid_w: float = lerpf(2.8, 4.6, p)
+	var core_w: float = lerpf(1.3, 2.3, p)
+	var outer_a: float = lerpf(0.24, 0.50, p) * track_pulse
+	var mid_a: float = lerpf(0.54, 0.88, p) * track_pulse
+	var core_a: float = lerpf(0.42, 0.95, p) * track_pulse
+	canvas.draw_line(origin, sight_end, Color(1.0, 0.10, 0.42, outer_a), outer_w)
+	canvas.draw_line(origin, sight_end, Color(1.0, 0.22, 0.56, mid_a), mid_w)
+	canvas.draw_line(origin, sight_end, Color(1.0, 0.90, 0.96, core_a), core_w)
 
 	# 2. Contracting plasma charge ring pulling energy into the cannon muzzle
-	var ring_r: float = lerpf(32.0, 5.5, pow(p, 0.82))
-	var ring_a: float = clampf(p * 1.4, 0.25, 0.92)
-	canvas.draw_arc(origin, ring_r, 0.0, TAU, 24, Color(1.0, 0.24, 0.66, ring_a * 0.85), 2.2)
+	var ring_r: float = lerpf(38.0, 6.5, pow(p, 0.82))
+	var ring_a: float = clampf(p * 1.4, 0.30, 0.94)
+	canvas.draw_arc(origin, ring_r, 0.0, TAU, 24, Color(1.0, 0.24, 0.66, ring_a * 0.88), 2.8)
 	if p > 0.25:
-		var ring2_r: float = lerpf(22.0, 3.5, clampf((p - 0.25) / 0.75, 0.0, 1.0))
-		canvas.draw_arc(origin, ring2_r, 0.0, TAU, 20, Color(1.0, 0.88, 0.45, ring_a * 0.72), 1.6)
+		var ring2_r: float = lerpf(26.0, 4.2, clampf((p - 0.25) / 0.75, 0.0, 1.0))
+		canvas.draw_arc(origin, ring2_r, 0.0, TAU, 20, Color(1.0, 0.88, 0.45, ring_a * 0.78), 2.0)
 
 	# 3. Swelling incandescent overload core & rotating 4-point charge cross
-	var core_scale: float = 0.45 + 0.85 * p
+	var core_scale: float = 0.52 + 0.95 * p
 	if tex_orb_magenta != null:
-		var g_sz: float = 54.0 * core_scale
+		var g_sz: float = 62.0 * core_scale
 		canvas.draw_texture_rect(
 			tex_orb_magenta,
 			Rect2(ox - g_sz * 0.5, oy - g_sz * 0.5, g_sz, g_sz),
 			false,
-			Color(1.0, 0.75, 0.92, 0.92)
+			Color(1.0, 0.75, 0.92, 0.94)
 		)
 	var rot: float = anim_time * 12.0 + p * 4.5
-	var spoke_len: float = (10.0 + 14.0 * p)
+	var spoke_len: float = (12.0 + 16.0 * p)
 	for k in range(2):
 		var sang: float = rot + float(k) * PI * 0.5
 		var sd := Vector2(cos(sang), sin(sang)) * spoke_len
-		canvas.draw_line(origin - sd, origin + sd, Color(1.0, 0.86, 0.96, 0.86), 2.0)
-	canvas.draw_circle(origin, 4.2 + 5.2 * p, Color(1.0, 0.18, 0.48, 0.96))
-	canvas.draw_circle(origin, 2.2 + 3.2 * p, Color(1.0, 0.98, 0.98, 1.0))
+		canvas.draw_line(origin - sd, origin + sd, Color(1.0, 0.86, 0.96, 0.88), 2.4)
+	canvas.draw_circle(origin, 5.0 + 6.2 * p, Color(1.0, 0.18, 0.48, 0.96))
+	canvas.draw_circle(origin, 2.6 + 3.8 * p, Color(1.0, 0.98, 0.98, 1.0))
 
 
 func draw_boss_targeted_laser(
@@ -1624,22 +1628,22 @@ func draw_boss_targeted_laser(
 	var perp := Vector2(-fwd.y, fwd.x)
 	var pulse: float = 1.0 + 0.10 * sin(anim_time * 46.0 + (x + y) * 0.02)
 
-	# 1. Long high-velocity crimson-magenta ionized slipstream wake
+	# 1. Larger high-velocity crimson-magenta ionized slipstream wake
 	canvas.draw_line(
-		pos - fwd * 74.0,
-		pos - fwd * 8.0,
-		Color(1.0, 0.10, 0.48, 0.44),
-		4.2
+		pos - fwd * 108.0,
+		pos - fwd * 10.0,
+		Color(1.0, 0.10, 0.48, 0.48),
+		6.4
 	)
 	for sgn in [-1.0, 1.0]:
 		canvas.draw_line(
-			pos - fwd * 56.0 + perp * (sgn * 3.4),
-			pos - fwd * 4.0 + perp * (sgn * 2.0),
-			Color(1.0, 0.34, 0.78, 0.42),
-			1.6
+			pos - fwd * 82.0 + perp * (sgn * 5.2),
+			pos - fwd * 6.0 + perp * (sgn * 3.0),
+			Color(1.0, 0.34, 0.78, 0.46),
+			2.4
 		)
 
-	# 2. Oriented glowing plasma lance aura
+	# 2. Larger oriented glowing plasma lance aura
 	if tex_enemy_comet_red != null:
 		_draw_oriented_tex_quad(
 			canvas,
@@ -1647,23 +1651,23 @@ func draw_boss_targeted_laser(
 			pos,
 			fwd,
 			perp,
-			96.0,
-			30.0 * pulse,
+			138.0,
+			44.0 * pulse,
 			0.74,
 			Color(1.0, 0.78, 0.96, 0.98)
 		)
 
-	# 3. High-contrast crimson-magenta beam sheath + razor-sharp white-hot laser core
-	var tail_pt: Vector2 = pos - fwd * 30.0
-	var nose_pt: Vector2 = pos + fwd * 18.0
-	canvas.draw_line(tail_pt, nose_pt, Color(0.24, 0.02, 0.18, 0.85), 9.2)
-	canvas.draw_line(tail_pt, nose_pt, Color(1.0, 0.14, 0.46, 0.96), 6.0 * pulse)
-	canvas.draw_line(pos - fwd * 22.0, nose_pt, Color(1.0, 0.96, 0.99, 0.99), 2.8 * pulse)
+	# 3. Heavy high-contrast crimson-magenta beam sheath + razor-sharp white-hot laser core
+	var tail_pt: Vector2 = pos - fwd * 44.0
+	var nose_pt: Vector2 = pos + fwd * 26.0
+	canvas.draw_line(tail_pt, nose_pt, Color(0.24, 0.02, 0.18, 0.88), 13.5)
+	canvas.draw_line(tail_pt, nose_pt, Color(1.0, 0.14, 0.46, 0.97), 9.0 * pulse)
+	canvas.draw_line(pos - fwd * 32.0, nose_pt, Color(1.0, 0.96, 0.99, 0.99), 4.2 * pulse)
 
 	# 4. Leading focal cross-glint
-	var glint_pt: Vector2 = pos + fwd * 12.0
-	canvas.draw_line(glint_pt - perp * 7.5 * pulse, glint_pt + perp * 7.5 * pulse, Color(1.0, 0.65, 0.88, 0.76), 1.6)
-	canvas.draw_circle(glint_pt, 3.4 * pulse, Color(1.0, 1.0, 1.0, 1.0))
+	var glint_pt: Vector2 = pos + fwd * 18.0
+	canvas.draw_line(glint_pt - perp * 11.0 * pulse, glint_pt + perp * 11.0 * pulse, Color(1.0, 0.65, 0.88, 0.80), 2.2)
+	canvas.draw_circle(glint_pt, 5.0 * pulse, Color(1.0, 1.0, 1.0, 1.0))
 
 
 func draw_asteroid_2d_fallback(

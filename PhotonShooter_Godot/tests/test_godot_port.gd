@@ -218,15 +218,15 @@ func _process(_delta: float) -> bool:
 		game._hit_dreadnought(100, Vector2(1300.0, 540.0), true)
 		assert(game.dreadnought.hp == 600, "Destroyer must be 100% invulnerable to damage while Emergency Shield is active")
 		var d_overload_bullets: Array = []
-		for _ds in range(85):
+		for _ds in range(95):
 			game.dreadnought.update(0.05, game.player, d_overload_bullets)
 		var d_tlasers: int = 0
 		for eb_d in d_overload_bullets:
 			if String(eb_d.get("kind", "")) == "targeted_laser":
 				d_tlasers += 1
 				var d_spd: float = Vector2(float(eb_d["vx"]), float(eb_d["vy"])).length()
-				assert(d_spd > 1050.0, "Destroyer targeted overload lasers must fly at high speed")
-		assert(d_tlasers >= 5, "Destroyer must charge and fire multiple player-targeted high-speed lasers during Emergency Shield")
+				assert(absf(d_spd - 1120.0) < 2.0 and float(eb_d["radius"]) >= 11.0, "Destroyer targeted overload lasers must be larger (radius 11.5) while keeping 1120 speed")
+		assert(d_tlasers >= 5, "Destroyer must charge (1.0s player tracking) and fire multiple targeted high-speed lasers during Emergency Shield")
 		assert(not game.dreadnought.is_shielded() and game.dreadnought.enraged, "Destroyer Emergency Shield must drop after a few seconds into enraged Phase 2")
 		game.dreadnought.attack_timer = 0.01
 		game.dreadnought.update(0.02, game.player, d_overload_bullets)
@@ -245,15 +245,15 @@ func _process(_delta: float) -> bool:
 		game._hit_boss_titan(100, Vector2(1200.0, 540.0), true)
 		assert(game.boss.hp == 3000, "Boss Titan must be 100% invulnerable to damage while Emergency Shield is active")
 		var b_overload_bullets: Array = []
-		for _bs in range(95):
+		for _bs in range(105):
 			game.boss.update(0.05, game.player, b_overload_bullets)
 		var b_tlasers: int = 0
 		for eb_b in b_overload_bullets:
 			if String(eb_b.get("kind", "")) == "targeted_laser":
 				b_tlasers += 1
 				var b_spd: float = Vector2(float(eb_b["vx"]), float(eb_b["vy"])).length()
-				assert(b_spd > 1150.0, "Titan targeted overload lasers must fly at high speed")
-		assert(b_tlasers >= 7, "Boss Titan must charge and fire multiple player-targeted high-speed lasers during Emergency Shield")
+				assert(absf(b_spd - 1220.0) < 2.0 and float(eb_b["radius"]) >= 11.0, "Titan targeted overload lasers must be larger (radius 11.5) while keeping 1220 speed")
+		assert(b_tlasers >= 7, "Boss Titan must charge (1.0s player tracking) and fire multiple targeted high-speed lasers during Emergency Shield")
 		assert(not game.boss.is_shielded() and game.boss.enraged, "Boss Titan Emergency Shield must drop into enraged Phase 2")
 		game.boss.attack_timer = 0.01
 		game.boss.update(0.02, game.player, b_overload_bullets)
