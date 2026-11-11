@@ -170,7 +170,7 @@ class EnemyShip:
 			hp = int(round(20.0 * hp_mult))
 			max_hp = hp
 			speed_x = 380.0 * speed_mult
-			score_value = 100
+			score_value = 200
 			state = "enter"
 			target_x = GameConfig.SCREEN_WIDTH * 0.75 + randf_range(-25.0, 25.0)
 			stop_x = target_x
@@ -189,7 +189,7 @@ class EnemyShip:
 			speed_x = 340.0 * speed_mult
 			amp_y = randf_range(35.0, 75.0)
 			freq_y = randf_range(1.8, 2.4)
-			score_value = 150
+			score_value = 300
 			fire_checkpoints = [
 				GameConfig.SCREEN_WIDTH * 0.72 + randf_range(-30.0, 30.0),
 			]
@@ -592,7 +592,7 @@ class BossTitan:
 	var target_x: float = 1555.0
 	var hp: int = 6000
 	var max_hp: int = 6000
-	var score_value: int = 50000
+	var score_value: int = 10000
 	var time: float = 0.0
 	var strafe_time: float = 0.0
 	var vy: float = 0.0
@@ -894,7 +894,7 @@ class AsteroidHazard:
 			draw_size = 86.0
 			max_hp = 45
 			hp = max_hp
-			score_value = 100
+			score_value = 200
 			spin_speed = randf_range(1.35, 2.35) * (-1.0 if randf() < 0.5 else 1.0)
 			wobble_speed = randf_range(1.65, 2.55)
 		spin_angle = randf_range(0.0, TAU)

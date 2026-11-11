@@ -443,7 +443,7 @@ func state_update(dt: float) -> void:
 						"x": float(dummy_target["x"]),
 						"y": float(dummy_target["y"]) - 24.0,
 						"vy": -86.0,
-						"text": "+100",
+						"text": "+200",
 						"age": 0.0,
 						"max_age": 0.90,
 						"style": "standard"
@@ -483,7 +483,7 @@ func state_update(dt: float) -> void:
 					"x": float(dummy_target["x"]),
 					"y": float(dummy_target["y"]) - 24.0,
 					"vy": -86.0,
-					"text": "+150",
+					"text": "+300",
 					"age": 0.0,
 					"max_age": 0.95,
 					"style": "raider"

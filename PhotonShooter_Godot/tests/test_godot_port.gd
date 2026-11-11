@@ -152,7 +152,7 @@ func _process(_delta: float) -> bool:
 
 		# Test Raider banking states & single X-checkpoint firing in GameState
 		var raider = game.EnemyShip.new("raider", 1450.0, 500.0, game.enemy_sprites, 1.0)
-		assert(raider.hp == 25 and raider.fire_checkpoints.size() == 1, "Raider (Interceptor) should have 25 base HP and 1 X fire checkpoint")
+		assert(raider.hp == 25 and raider.score_value == 300 and raider.fire_checkpoints.size() == 1, "Raider (Interceptor) should have 25 base HP, 300 score_value, and 1 X fire checkpoint")
 		raider.amp_y = 140.0
 		raider.freq_y = 2.5
 		raider.phase = 0.0
@@ -359,14 +359,14 @@ func _process(_delta: float) -> bool:
 			game.state_update(0.1)
 		assert(game.victory_SubPhase == "MODAL" and game.entering_name == true, "Victory sequence should complete centering + blast-off into name entry modal")
 
-		# Test kill Score Pop-ups (+100, +150, +5,000, +50,000) & 4-hit Player Shield Hit / Collapse feedback
+		# Test kill Score Pop-ups (+200, +300, +5,000, +10,000) & 4-hit Player Shield Hit / Collapse feedback
 		game.reset_game()
 		var kill_scout = game.EnemyShip.new("scout", 700.0, 500.0, game.enemy_sprites, 1.0)
 		kill_scout.hp = 10
 		game.enemies.append(kill_scout)
 		game.player_bullets.append({"x": 695.0, "y": 500.0, "vx": 1280.0, "vy": 0.0, "damage": 15, "age": 0.0, "phase": 0.0})
 		game.state_update(0.016)
-		assert(game.score_popups.size() == 1 and game.score_popups[0]["text"] == "+100", "Destroying a Scout must spawn a +100 score pop-up")
+		assert(game.score_popups.size() == 1 and game.score_popups[0]["text"] == "+200" and game.score == 200, "Destroying a Scout must award 200 points and spawn a +200 score pop-up")
 		var popup_start_y: float = float(game.score_popups[0]["y"])
 		game.state_update(0.10)
 		assert(float(game.score_popups[0]["y"]) < popup_start_y, "Score pop-ups must float smoothly upward")
@@ -423,21 +423,21 @@ func _process(_delta: float) -> bool:
 		assert(not sm0.is_large and not sm1.is_large and sm0.hp == 45 and sm1.hp == 45, "Split Small asteroids should have 45 HP (less tough than Large)")
 		assert(sm0.vx < 0.0 and sm1.vx < 0.0 and sm0.vy * sm1.vy < 0.0, "Split Small asteroids should continue right-to-left while diverging vertically")
 
-		# Destroy Small asteroid #1 with 3 laser bolts (45 dmg) -> awards +100 points and floating +100 popup
+		# Destroy Small asteroid #1 with 3 laser bolts (45 dmg) -> awards +200 points and floating +200 popup
 		for _b3 in range(3):
 			game.player_bullets.append({"x": sm0.x - 8.0, "y": sm0.y, "vx": 1280.0, "vy": 0.0, "damage": 15, "age": 0.0, "phase": 0.0})
 		game.state_update(0.016)
-		assert(game.asteroids.size() == 1 and game.score == 100, "Destroying a Small asteroid must award 100 points")
-		assert(game.score_popups.size() >= 1 and game.score_popups[-1]["text"] == "+100", "Destroying a Small asteroid must spawn a +100 score popup")
+		assert(game.asteroids.size() == 1 and game.score == 200, "Destroying a Small asteroid must award 200 points")
+		assert(game.score_popups.size() >= 1 and game.score_popups[-1]["text"] == "+200", "Destroying a Small asteroid must spawn a +200 score popup")
 
-		# Destroy Small asteroid #2 with a homing missile (100 dmg) -> awards another +100 points (total 200)
+		# Destroy Small asteroid #2 with a homing missile (100 dmg) -> awards another +200 points (total 400)
 		game.homing_missiles.append({
 			"x": sm1.x - 6.0, "y": sm1.y, "vx": 680.0, "vy": 0.0,
 			"speed": 680.0, "damage": 100, "age": 0.0,
 			"max_tracking_time": 3.0, "turn_rate": 3.2, "trail": []
 		})
 		game.state_update(0.016)
-		assert(game.asteroids.is_empty() and game.score == 200, "Destroying both Small fragments must yield 200 total points")
+		assert(game.asteroids.is_empty() and game.score == 400, "Destroying both Small fragments must yield 400 total points")
 
 		# Test Asteroid <-> Player collision: dodging phases safely; unshielded collision damages player without awarding score
 		game.reset_game()
